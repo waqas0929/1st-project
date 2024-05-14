@@ -15,6 +15,7 @@ const classController = {
     }
   },
 
+
   getName: (req, res) => {
     try {
       const name = req.params.name;
