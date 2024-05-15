@@ -1,16 +1,12 @@
-const students = [
-  { id: 1, name: "Ali", Subject: "MERN-16" },
-  { id: 2, name: "Daniyal", Subject: "MERN-16" },
-  { id: 3, name: "Mujtaba", Subject: "MERN-16" },
-  { id: 4, name: "Kaleem", Subject: "MERN-16" },
-  { id: 5, name: "Mahad", Subject: "MERN-16" },
-];
+import studentModel from "../../model/student/index.js";
 
 const studentController = {
-  getAll: (req, res) => {
+  getAll: async (req, res) => {
     try {
+
+      const allStudents = await studentModel.findAll()
       res.json({
-        students,
+        student: allStudents,
       });
     } catch (error) {
       res.status(500).json({ message: "internal server error" });
@@ -20,7 +16,7 @@ const studentController = {
   getId: (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const student = students.find((student) => student.id === id);
+      const student = student.find((student) => student.id === id);
       if (!student) {
         res.status(404).json({ message: "Id is not correct" });
         return;
@@ -31,32 +27,36 @@ const studentController = {
     }
   },
 
-  create: (req, res) => {
+  create: async (req, res) => {
     try {
-      const newstudent = req.body;
-      if (!newstudent || Object.keys(newstudent).length === 0) {
-        res
-          .status(400)
-          .json({ message: "Bad request - student data not provided" });
-        return;
-      }
-      const isDuplicate = students.some((student) => {
-        return student.id === newstudent.id;
-      });
+      const newStudent = req.body;
 
-      if (isDuplicate) {
-        return res.status(404).json({
-          message: "students with this id is already exist",
-        });
-      }
-      students.push(newstudent);
-      res.status(201).json(newstudent);
+      // if (!newStudent || Object.keys(newStudent).length === 0) {
+      //   res
+      //     .status(400)
+      //     .json({ message: "Bad request - student data not provided" });
+      //   return;
+      // }
+      // const isDuplicate = students.some((student) => {
+      //   return student.id === newStudent.id;
+      // });
+
+      // if (isDuplicate) {
+      //   return res.status(409).json({
+      //     message: "students with this id is already exists",
+      //   });
+      // }
+      const createStudent = await studentModel.create({
+        firstName: newStudent.firstName,
+        lastName: newStudent.lastName,
+      });
+      res.status(201).json({ message: "new student added", createStudent });
     } catch (error) {
       res.status(500).json({ message: "internal server error" });
     }
   },
 
-  update: (req, res) => {
+  update: async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updatestudent = req.body;
@@ -65,26 +65,32 @@ const studentController = {
           .status(400)
           .json({ message: "Bad request - Update data not provided" });
       }
-      const index = students.findIndex((student) => student.id === id);
-      if (index === -1) {
-        res.status(404).json({ error: "no student found on this id" });
+      const existingStudent = await studentModel.findOne({ where: { id } });
+      if (!existingStudent) {
+        return res.status(404).json({ error: "No student found with this ID" });
       }
-      students.splice(index, 1, updatestudent);
+      await studentModel.update(updatestudent, { where: { id } });
+
+      const updatedStudent = await studentModel.findOne({ where: { id } });
+
       res.json(updatestudent);
     } catch (error) {
       res.status(500).json({ message: "internal server error" });
     }
   },
 
-  deleted: (req, res) => {
+  deleted: async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const index = students.findIndex((student) => student.id == id);
-      if (index === -1) {
-        res.status(404).json({ error: "no student found on this id" });
+
+      const existingStudent = await studentModel.findOne({ where: { id } });
+      if (!existingStudent) {
+        res.status(404).json({ error: "no student found with this id" });
       }
-      students.splice(index, 1);
-      res.status(201).json({ message: "student deleted" });
+
+      await studentModel.destroy({ where: { id } });
+
+      res.status(200).json({ message: "student deleted" });
     } catch {
       res.status(500).json({ message: "internal server error" });
     }
