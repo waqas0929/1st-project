@@ -3,8 +3,13 @@ import studentModel from "../../model/student/index.js";
 const studentController = {
   getAll: async (req, res) => {
     try {
-
-      const allStudents = await studentModel.findAll()
+      const allStudents = await studentModel.findAll({
+        where: {
+          firstName: "ali",
+        },
+        order: [["createdAt", "DESC"]],
+        limit: 10,
+      });
       res.json({
         student: allStudents,
       });
@@ -13,16 +18,21 @@ const studentController = {
     }
   },
 
-  getId: (req, res) => {
+  findOne: async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      const student = student.find((student) => student.id === id);
+      const firstName = req.params.id;
+      const student = await studentModel.findOne({
+        where: { firstName: firstName },
+        order: [["createdAt", "DESC"]],
+        limit: 10,
+      });
       if (!student) {
         res.status(404).json({ message: "Id is not correct" });
         return;
       }
       res.json(student);
     } catch (error) {
+      // console.log(error)
       res.status(500).json({ message: "internal server error" });
     }
   },
@@ -31,27 +41,30 @@ const studentController = {
     try {
       const newStudent = req.body;
 
-      // if (!newStudent || Object.keys(newStudent).length === 0) {
-      //   res
-      //     .status(400)
-      //     .json({ message: "Bad request - student data not provided" });
-      //   return;
-      // }
-      // const isDuplicate = students.some((student) => {
-      //   return student.id === newStudent.id;
-      // });
+      if (!newStudent || Object.keys(newStudent).length === 0) {
+        res
+          .status(400)
+          .json({ message: "Bad request - student data not provided" });
+        return;
+      }
+      const students = await studentModel.findAll({});
 
-      // if (isDuplicate) {
-      //   return res.status(409).json({
-      //     message: "students with this id is already exists",
-      //   });
-      // }
+      const isDuplicate = students.some((student) => {
+        return student.firstName === newStudent.firstName;
+      });
+
+      if (isDuplicate) {
+        return res.status(409).json({
+          message: "students with this name is already exists",
+        });
+      }
       const createStudent = await studentModel.create({
         firstName: newStudent.firstName,
         lastName: newStudent.lastName,
       });
       res.status(201).json({ message: "new student added", createStudent });
     } catch (error) {
+      console.log(error);
       res.status(500).json({ message: "internal server error" });
     }
   },
@@ -85,13 +98,14 @@ const studentController = {
 
       const existingStudent = await studentModel.findOne({ where: { id } });
       if (!existingStudent) {
-        res.status(404).json({ error: "no student found with this id" });
+        res.status(404).json({ message: "no student found with this id" });
       }
 
       await studentModel.destroy({ where: { id } });
 
       res.status(200).json({ message: "student deleted" });
-    } catch {
+    } catch (error) {
+      console.log(error);
       res.status(500).json({ message: "internal server error" });
     }
   },

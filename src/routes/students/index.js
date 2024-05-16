@@ -7,7 +7,7 @@ const studentsRouter = Router();
 studentsRouter.get("/students", studentController.getAll);
 
 //get student by id
-studentsRouter.get("/students/:id", studentController.getId);
+studentsRouter.get("/students/:id", studentController.findOne);
 
 //create student api
 studentsRouter.post("/students", studentController.create);
