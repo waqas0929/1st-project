@@ -11,7 +11,7 @@ const studentController = {
         limit: 10,
       });
       res.json({
-        student: allStudents,
+        student: ({student: allStudents}),
       });
     } catch (error) {
       res.status(500).json({ message: "internal server error" });
@@ -20,19 +20,17 @@ const studentController = {
 
   findOne: async (req, res) => {
     try {
-      const firstName = req.params.id;
+      const id = req.params.id;
       const student = await studentModel.findOne({
-        where: { firstName: firstName },
-        order: [["createdAt", "DESC"]],
-        limit: 10,
+        where: { id },
       });
       if (!student) {
-        res.status(404).json({ message: "Id is not correct" });
+        res.status(404).json({ message: "Student not found" });
         return;
       }
       res.json(student);
     } catch (error) {
-      // console.log(error)
+      console.log(error)
       res.status(500).json({ message: "internal server error" });
     }
   },
@@ -72,8 +70,8 @@ const studentController = {
   update: async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const updatestudent = req.body;
-      if (!updatestudent || Object.keys(updatestudent).length === 0) {
+      const updateStudent = req.body;
+      if (!updateStudent || Object.keys(updateStudent).length === 0) {
         res
           .status(400)
           .json({ message: "Bad request - Update data not provided" });
@@ -82,12 +80,13 @@ const studentController = {
       if (!existingStudent) {
         return res.status(404).json({ error: "No student found with this ID" });
       }
-      await studentModel.update(updatestudent, { where: { id } });
+      await studentModel.update(updateStudent, { where: { id } });
 
       const updatedStudent = await studentModel.findOne({ where: { id } });
 
-      res.json(updatestudent);
+      res.json(updateStudent);
     } catch (error) {
+      console.log(error)
       res.status(500).json({ message: "internal server error" });
     }
   },

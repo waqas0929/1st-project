@@ -1,32 +1,31 @@
-import studentModel from "../../model/student/index.js";
 import teacherModel from "../../model/teacher/index.js";
 const teacherController = {
   getAll: async (req, res) => {
     try {
       const allTeachers = await teacherModel.findAll({
         where: {
-          firstName: "Ali",
+          firstName: "ali",
         },
         order: [["createdAt", "DESC"]],
+        limit: 10,
       });
       res.json({
         teachers: allTeachers,
       });
     } catch (error) {
+      console.log(error);
       res.status(500).json({ message: "internal server error" });
     }
   },
 
   findOne: async (req, res) => {
     try {
-      const firstName = req.params.id;
+      const id = req.params.id;
       const teacher = await teacherModel.findOne({
-        where: {
-          firstName: firstName,
-        },
+        where: { id },
       });
       if (!teacher) {
-        res.status(404).json({ message: "firstName is not correct" });
+        res.status(404).json({ message: "id is not correct" });
         return;
       }
       res.json(teacher);
@@ -84,7 +83,7 @@ const teacherController = {
 
       await teacherModel.update(updateTeacher, { where: { id } });
 
-      const updatedTeacher = await studentModel.findOne({ where: { id } });
+      const updatedTeacher = await teacherModel.findOne({ where: { id } });
 
       res.json(updateTeacher);
     } catch (error) {
