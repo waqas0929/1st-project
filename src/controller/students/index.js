@@ -34,6 +34,23 @@ const studentController = {
       res.status(500).json({ message: "internal server error" });
     }
   },
+  //  findBook = async (req, res) => {
+  //   try {
+  //     const { id } = req.params; 
+  //     const sale = await salesModel.findByPk(
+  //       {
+  //         where:
+  //         id:id});  
+  
+  //     if (sale) {
+  //       res.status(200).json({ message: sale });
+  //     } else {
+  //       res.status(404).json({ message: 'Sale not found' });
+  //     }
+  //   } catch (error) {
+  //     res.status(500).json({ message: 'An error occurred', error: error.message });
+  //   }
+  // };
 
   create: async (req, res) => {
     try {
