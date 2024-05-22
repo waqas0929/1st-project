@@ -4,15 +4,15 @@ import sequelize from "../../db/config.js";
 const productModel = sequelize.define(
   "products",
   {
-    productName: {
+    name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    productStock: {
+    stock: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    productRate: {
+    rate: {
       type: DataTypes.DOUBLE,
       allowNull: false,
     },

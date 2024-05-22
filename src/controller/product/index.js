@@ -31,20 +31,28 @@ const productController = {
     try {
       const { productName, productStock, productRate } = req.body;
 
-      if (!productName || !productStock || !productRate)
-        res
+      if (!productName || !productStock || !productRate) {
+        return res
           .status(404)
           .json({ message: "product name, rate and stock are required" });
+      }
 
-      const product = new productModel({
-        productName,
-        productStock,
-        productRate,
+      const existProduct = await productModel.findOne({
+        where: { name: productName },
+      });
+      if (existProduct) {
+        return res
+          .status(400)
+          .json({ message: "A product with this name is already exist" });
+      }
+
+      const product = await productModel.create({
+        name: productName,
+        stock: productStock,
+        rate: productRate,
       });
 
-      const saveProduct = await product.save();
-
-      res.status(201).json(saveProduct);
+      res.status(201).json(product);
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Failed to add product", error });
@@ -53,19 +61,33 @@ const productController = {
 
   update: async (req, res) => {
     try {
-      const [updated] = await productModel.update(req.body, {
-        where: { id: req.params.id },
-      });
-      if (updated) {
-        const updatedProduct = await productModel.findByPk(req.params.id);
-        res.status(200).json(updatedProduct);
+      const { productRate, productStock } = req.body;
+      const { id } = req.params;
+  
+      const product = await productModel.findByPk(id);
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+  
+      const newStock = product.stock + parseInt(productStock, 10);
+  
+      const [updatedRowCount] = await productModel.update(
+        { rate: productRate, stock: newStock },
+        { where: { id } }
+      );
+  
+      if (updatedRowCount > 0) {
+        const updatedProduct = await productModel.findByPk(id);
+        return res.status(200).json(updatedProduct);
       } else {
-        res.status(404).json({ error: "Product not found" });
+        return res.status(404).json({ error: "Product not found" });
       }
     } catch (error) {
-      res.status(500).json({ error: "Failed to update product" });
+      console.log(error);
+      return res.status(500).json({ error: "Failed to update product", error });
     }
   },
+    
 
   deleted: async (req, res) => {
     try {

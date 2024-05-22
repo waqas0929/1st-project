@@ -67,64 +67,48 @@ const salesController = {
 
   create: async (req, res) => {
     try {
-      const newSale = req.body.salesProducts;
-
-      if (
-        !newSale ||
-        !Array.isArray(newSale) ||
-        !newSale.every((item) => item.productId && item.productQuantity)
-      ) {
-        return res.status(400).json({ message: "Invalid request data" });
-      }
+      const { salesProducts } = req.body;
 
       let totalAmount = 0;
+      const saleProducts = [];
 
-      for (const element of newSale) {
-        totalAmount += element.productQuantity;
-      }
-
-      const sale = new salesModel();
-      sale.totalAmount = totalAmount;
-      await sale.save();
-
-      const saleProduct = [];
-      const productIds = newSale.map((item) => item.productId);
-
-      const products = await productModel.findAll({
-        where: {
-          id: productIds,
-        },
-      });
-
-      const productMap = new Map(
-        products.map((product) => [product.id, product])
-      );
-
-      for (const element of newSale) {
-        const product = productMap.get(element.productId);
+      for (const { ProductId, rate, productQuantity } of salesProducts) {
+        const product = await productModel.findByPk(ProductId);
         if (!product) {
-          return res.status(404).json({
-            message: "Product not found: " + element.productId,
+          return res
+            .status(404)
+            .json({ message: `Product with id ${ProductId} not found` });
+        }
+
+        // const sale = new salesModel();
+
+        if (productQuantity > product.stock) {
+          return res.status(400).json({
+            message: "Insufficient stock for this product",
           });
         }
-        if (element.productQuantity > product.stock) {
-          return res.status(404).json({
-            message: "The product " + product.name + " has insufficient stock",
-          });
-        }
-        saleProduct.push({
-          ...element,
-          saleId: sale.id,
+        totalAmount += rate * productQuantity;
+        saleProducts.push({
+          productId: ProductId,
+          productQuantity,
+          productRate: rate,
         });
+
+        await product.update({ stock: product.stock - productQuantity });
       }
 
-      console.log("sales product", saleProduct);
-      await saleProductModel.bulkCreate(saleProduct);
+      const sale = await salesModel.create({ totalAmount });
 
-      res.status(200).json({ message: "Sale created", sale, saleProduct });
+      for (const saleProduct of saleProducts) {
+        saleProduct.saleId = sale.id;
+      }
+
+      await saleProductModel.bulkCreate(saleProducts);
+
+      res.status(200).json({ message: "sale created", sale, saleProducts });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Internal server error" });
+      console.log(error);
+      res.status(500).json({ message: "Internal server error", error });
     }
   },
 
