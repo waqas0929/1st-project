@@ -14,11 +14,12 @@ const productController = {
 
   getId: async (req, res) => {
     try {
-      const product = await productModel.findByPk(req.params.id);
-      if (product) {
-        res.status(200).json(product);
-      } else {
+      const { id } = req.params;
+      const product = await productModel.findByPk(id);
+      if (!product) {
         res.status(404).json({ error: "Product not found" });
+      } else {
+        res.status(200).json(product);
       }
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch product" });
@@ -28,14 +29,22 @@ const productController = {
   // Add a new product
   addProduct: async (req, res) => {
     try {
-      const newProduct = req.body
-      const product = new productModel();
-      product.name= newProduct.name
-      product.rate= newProduct.rate
-      product.stock= newProduct.stock;
+      const { productName, productStock, productRate } = req.body;
 
-      product.save
-      res.status(201).json(newProduct);
+      if (!productName || !productStock || !productRate)
+        res
+          .status(404)
+          .json({ message: "product name, rate and stock are required" });
+
+      const product = new productModel({
+        productName,
+        productStock,
+        productRate,
+      });
+
+      const saveProduct = await product.save();
+
+      res.status(201).json(saveProduct);
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Failed to add product", error });
@@ -64,7 +73,7 @@ const productController = {
         where: { id: req.params.id },
       });
       if (deleted) {
-        res.status(200).json({message:"Product deleted successfully"});
+        res.status(200).json({ message: "Product deleted successfully" });
       } else {
         res.status(404).json({ error: "Product not found" });
       }

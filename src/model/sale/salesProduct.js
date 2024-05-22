@@ -6,10 +6,6 @@ import productModel from "./product.js";
 const saleProductModel = sequelize.define(
   "saleProduct",
   {
-    productName: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     productQuantity: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -19,13 +15,12 @@ const saleProductModel = sequelize.define(
       allowNull: false,
     },
   }
-  // {}
 );
-
-productModel.hasMany(saleProductModel);
-saleProductModel.belongsTo(productModel);
 
 SalesModel.hasMany(saleProductModel);
 saleProductModel.belongsTo(SalesModel);
+
+productModel.hasMany(saleProductModel);
+saleProductModel.belongsTo(productModel);
 
 export default saleProductModel;

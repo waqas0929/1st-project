@@ -1,6 +1,6 @@
 import salesModel from "../../model/sale/index.js";
-import productModel from "../../model/sale/product.js";
 import saleProductModel from "../../model/sale/salesProduct.js";
+import productModel from "../../model/sale/product.js";
 
 const salesController = {
   getAll: async (req, res) => {
@@ -24,7 +24,11 @@ const salesController = {
         include: [
           {
             model: saleProductModel,
-            include:[productModel],
+            include: [
+              {
+                productModel,
+              },
+            ],
           },
         ],
       });
@@ -63,26 +67,63 @@ const salesController = {
 
   create: async (req, res) => {
     try {
-      const newSale = req.body;
+      const newSale = req.body.salesProducts;
+
+      if (
+        !newSale ||
+        !Array.isArray(newSale) ||
+        !newSale.every((item) => item.productId && item.productQuantity)
+      ) {
+        return res.status(400).json({ message: "Invalid request data" });
+      }
+
+      let totalAmount = 0;
+
+      for (const element of newSale) {
+        totalAmount += element.productQuantity;
+      }
 
       const sale = new salesModel();
-
-      sale.totalAmount = 10;
-
+      sale.totalAmount = totalAmount;
       await sale.save();
 
-      const salesProduct = newSale.salesProduct.map((ele) => {
-        return {
-          ...ele,
-          saleId: sale.id,
-        };
+      const saleProduct = [];
+      const productIds = newSale.map((item) => item.productId);
+
+      const products = await productModel.findAll({
+        where: {
+          id: productIds,
+        },
       });
 
-      await saleProductModel.bulkCreate(salesProduct);
+      const productMap = new Map(
+        products.map((product) => [product.id, product])
+      );
 
-      res.status(200).json({ message: "sale created", sale });
+      for (const element of newSale) {
+        const product = productMap.get(element.productId);
+        if (!product) {
+          return res.status(404).json({
+            message: "Product not found: " + element.productId,
+          });
+        }
+        if (element.productQuantity > product.stock) {
+          return res.status(404).json({
+            message: "The product " + product.name + " has insufficient stock",
+          });
+        }
+        saleProduct.push({
+          ...element,
+          saleId: sale.id,
+        });
+      }
+
+      console.log("sales product", saleProduct);
+      await saleProductModel.bulkCreate(saleProduct);
+
+      res.status(200).json({ message: "Sale created", sale, saleProduct });
     } catch (error) {
-      console.log(error);
+      console.error(error);
       res.status(500).json({ message: "Internal server error" });
     }
   },
@@ -146,5 +187,5 @@ const salesController = {
     }
   },
 };
-// 03008863452
+//
 export default salesController;
